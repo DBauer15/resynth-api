@@ -1,5 +1,6 @@
 /*
     resynth - A program for resynthesizing textures.
+    modified by David Bauer, 2024
     modified by Connor Olding, 2016
     Copyright (C) 2000 2008  Paul Francis Harrison
     Copyright (C) 2002  Laurent Despeyroux
@@ -11,6 +12,7 @@
     If not, visit <http://gnu.org/licenses/> to obtain one.
 */
 
+#include "resynth.h"
 #include <limits.h>
 #include <math.h> // for log (neglog_cauchy) used in pixel diff. calculations
 #include <stdbool.h> // we're targetting C11 anyway, may as well use it
@@ -91,6 +93,11 @@ rnd_pcg_t pcg;
 #define INLINE static inline
 
 // end of generic boilerplate, here's the actual program:
+struct _Resynth_result {
+    uint8_t* pixels;
+    size_t width, height, channels;
+    bool valid;
+};
 
 typedef struct coord {
     int x, y;
@@ -141,12 +148,12 @@ typedef struct {
 #define image_at(image, x, y) (image##_array + (y * image.width + x) * image.depth)
 #define image_atc(image, coord) image_at(image, coord.x, coord.y)
 
-typedef struct {
+struct _Parameters {
     bool h_tile, v_tile;
     double autism;
     int neighbors, tries;
     int magic;
-} Parameters;
+};
 
 INLINE bool wrap_or_clip(const Parameters parameters, const Image image,
                          Coord *point) {
@@ -171,7 +178,7 @@ INLINE bool wrap_or_clip(const Parameters parameters, const Image image,
     return true;
 }
 
-typedef struct {
+struct _Resynth_state {
     int input_bytes;
     // note that these variables must exist alongside their "_array"s
     // for the image macros to work.
@@ -191,7 +198,7 @@ typedef struct {
 
     int best;
     Coord best_point;
-} Resynth_state;
+};
 
 static void state_free(Resynth_state *s) {
     sb_freeset(s->data_points);
@@ -458,6 +465,132 @@ static const int disc00[] = {
     941,  949,  965,  973,  981,  989,  997,  1005,
     1009, 1033, 1041, 1049, 1057, 1069, 1085, 1093
 };
+
+// API Functions
+/* Image and Buffer Loading */
+resynth_state_t
+resynth_load_image(char* filename) {
+    resynth_state_t s = calloc(1, sizeof(Resynth_state));
+    int w, h, d;
+    int scale = 1;
+    uint8_t *image = stbi_load(filename, &w, &h, &d, 0);
+    if (image == NULL) {
+        fprintf(stderr, "invalid image: %s\n", filename);
+        return NULL;
+    }
+
+    IMAGE_RESIZE(s->corpus, w, h, d);
+    memcpy(s->corpus_array, image, w * h * d);
+
+    s->input_bytes = MIN(d, 3);
+
+    {
+        int data_w = 256, data_h = 256;
+        if (scale > 0) data_w = scale * w, data_h = scale * h;
+        if (scale < 0) data_w = -scale, data_h = -scale;
+        IMAGE_RESIZE(s->data, data_w, data_h, s->input_bytes);
+    }
+
+    stbi_image_free(image);
+    rnd_pcg_seed(&pcg, time(0));
+    return s;
+}
+
+resynth_state_t
+resynth_load_memory(uint8_t* pixels, size_t width, size_t height, size_t channels) {
+    // TODO
+}
+
+/* Config */
+resynth_parameters_t
+resynth_parameters_create() {
+    resynth_parameters_t parameters = calloc(1, sizeof(Parameters));
+    parameters->v_tile = true;
+    parameters->h_tile = true;
+    parameters->magic = 192;         // 192 (3/4)
+    parameters->autism = 32. / 256.; // 30. / 256.
+    parameters->neighbors = 29;      // 30
+    parameters->tries = 192;         // 200 (or 80 in the paper)
+    return parameters;
+}
+
+void
+resynth_parameters_h_tile(resynth_parameters_t parameters, bool h_tile) {
+    parameters->h_tile = h_tile;
+}
+
+void
+resynth_parameters_v_tile(resynth_parameters_t parameters, bool v_tile) {
+    parameters->v_tile = v_tile;
+}
+
+void
+resynth_parameters_outlier_sensitivity(resynth_parameters_t parameters, double sensitivity) {
+    parameters->autism = sensitivity;
+}
+
+void
+resynth_parameters_neighbors(resynth_parameters_t parameters, int neighbors) {
+    parameters->neighbors = neighbors;
+}
+
+void
+resynth_parameters_tries(resynth_parameters_t parameters, int tries) {
+    parameters->tries = tries;
+}
+
+void
+resynth_parameters_magic(resynth_parameters_t parameters, int magic) {
+    parameters->magic = magic;
+}
+
+void
+resynth_destroy(void* resynth_object) {
+    free(resynth_object);
+}
+
+/* Processing and Results */ 
+resynth_result_t 
+resynth_run(resynth_state_t state, resynth_parameters_t parameters) {
+    assert(state != NULL);
+    assert(parameters != NULL);
+
+    resynth_result_t result = calloc(1, sizeof(Resynth_result));
+    resynth(state, *parameters);
+
+    result->pixels = state->data_array;
+    result->width = state->data.width;
+    result->height = state->data.height;
+    result->channels = state->data.depth;
+    result->valid = true;
+    return result;
+}
+
+bool 
+resynth_result_valid(resynth_result_t result) {
+    return result->valid;
+}
+
+uint8_t* 
+resynth_result_pixels(resynth_result_t result) {
+    return result->pixels;
+}
+
+size_t
+resynth_result_width(resynth_result_t result) {
+    return result->width;
+}
+
+size_t
+resynth_result_height(resynth_result_t result) {
+    return result->height;
+}
+
+size_t
+resynth_result_channels(resynth_result_t result) {
+    return result->channels;
+}
+
 
 int main(int argc, char *argv[]) {
     Resynth_state state = {0};
