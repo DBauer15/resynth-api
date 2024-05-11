@@ -1,4 +1,4 @@
-add_executable(resynth
+add_library(resynth
     resynth.c
 )
 
@@ -8,3 +8,7 @@ set_target_properties(resynth PROPERTIES
 )
 
 target_link_libraries(resynth m)
+
+target_include_directories(resynth PUBLIC
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+)

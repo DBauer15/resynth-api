@@ -35,7 +35,7 @@ typedef Parameters* resynth_parameters_t;
 
 /* Image and Buffer Loading */
 resynth_state_t
-resynth_load_image(char* filename);
+resynth_load_image(const char* filename);
 
 resynth_state_t
 resynth_load_memory(uint8_t* pixels, size_t width, size_t height, size_t channels);

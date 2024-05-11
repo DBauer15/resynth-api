@@ -32,15 +32,6 @@
 #define STBI_ONLY_GIF
 #include "stb_image.h"
 
-// likewise for stb_image_write. by using the static keyword,
-// any unused formats and functions can be stripped from the resulting binary.
-// we only use png (stbi_write_png) in this case.
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_STATIC
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-#include "stb_image_write.h"
-#pragma GCC diagnostic pop
 
 // this isn't the prettiest way of handling memory errors,
 // but it should suffice for our one-thing one-shot program.
@@ -49,10 +40,6 @@
     exit(1);
 // provides vector<>-like arrays of variable size.
 #include "stretchy_buffer.h"
-
-// for command-line argument parsing
-#include "kyaa.h"
-#include "kyaa_extra.h"
 
 // rand() is neither consistent across platforms
 // nor guaranteed to have desirable properties,
@@ -429,23 +416,6 @@ static void resynth(Resynth_state *s, Parameters parameters) {
     }
 }
 
-static char *manipulate_filename(const char *fn,
-                                 const char *new_extension) {
-#define MAX_LENGTH 256
-    int length = strlen(fn);
-    if (length > MAX_LENGTH) length = MAX_LENGTH;
-    // out_fn must be freed by the caller.
-    char *out_fn = (char *)calloc(2 * MAX_LENGTH, 1);
-    strncpy(out_fn, fn, length);
-
-    char *hint = strrchr(out_fn, '.');
-    if (hint == NULL) strcpy(out_fn + length, new_extension);
-    else strcpy(hint, new_extension);
-
-    return out_fn;
-#undef MAX_LENGTH
-}
-
 static const int disc00[] = {
     // http://oeis.org/A057961
     1,    5,    9,    13,   21,   25,   29,   37,
@@ -469,7 +439,7 @@ static const int disc00[] = {
 // API Functions
 /* Image and Buffer Loading */
 resynth_state_t
-resynth_load_image(char* filename) {
+resynth_load_image(const char* filename) {
     resynth_state_t s = calloc(1, sizeof(Resynth_state));
     int w, h, d;
     int scale = 1;
@@ -499,6 +469,7 @@ resynth_load_image(char* filename) {
 resynth_state_t
 resynth_load_memory(uint8_t* pixels, size_t width, size_t height, size_t channels) {
     // TODO
+    return NULL;
 }
 
 /* Config */
@@ -526,22 +497,22 @@ resynth_parameters_v_tile(resynth_parameters_t parameters, bool v_tile) {
 
 void
 resynth_parameters_outlier_sensitivity(resynth_parameters_t parameters, double sensitivity) {
-    parameters->autism = sensitivity;
+    parameters->autism = CLAMPV(sensitivity, 0., 1.);
 }
 
 void
 resynth_parameters_neighbors(resynth_parameters_t parameters, int neighbors) {
-    parameters->neighbors = neighbors;
+    parameters->neighbors = CLAMPV(neighbors, 0, disc00[LEN(disc00) - 1]);
 }
 
 void
 resynth_parameters_tries(resynth_parameters_t parameters, int tries) {
-    parameters->tries = tries;
+    parameters->tries = CLAMPV(tries, 0, 65536);
 }
 
 void
 resynth_parameters_magic(resynth_parameters_t parameters, int magic) {
-    parameters->magic = magic;
+    parameters->magic = CLAMPV(magic, 0, 255);
 }
 
 void
@@ -592,123 +563,123 @@ resynth_result_channels(resynth_result_t result) {
 }
 
 
-int main(int argc, char *argv[]) {
-    Resynth_state state = {0};
-    Resynth_state *s = &state; // (just for consistency across functions)
+/*int main(int argc, char *argv[]) {*/
+    /*Resynth_state state = {0};*/
+    /*Resynth_state *s = &state; // (just for consistency across functions)*/
 
-    Parameters parameters = {0};
-    parameters.v_tile = true;
-    parameters.h_tile = true;
-    // blah = our default;          // original resynthesizer default
-    parameters.magic = 192;         // 192 (3/4)
-    parameters.autism = 32. / 256.; // 30. / 256.
-    parameters.neighbors = 29;      // 30
-    parameters.tries = 192;         // 200 (or 80 in the paper)
+    /*Parameters parameters = {0};*/
+    /*parameters.v_tile = true;*/
+    /*parameters.h_tile = true;*/
+    /*// blah = our default;          // original resynthesizer default*/
+    /*parameters.magic = 192;         // 192 (3/4)*/
+    /*parameters.autism = 32. / 256.; // 30. / 256.*/
+    /*parameters.neighbors = 29;      // 30*/
+    /*parameters.tries = 192;         // 200 (or 80 in the paper)*/
 
-    int scale = 1;
-    unsigned long seed = 0;
+    /*int scale = 1;*/
+    /*unsigned long seed = 0;*/
 
-    // our main() return value. subtracted by one for each failed image.
-    int ret = 0;
+    /*// our main() return value. subtracted by one for each failed image.*/
+    /*int ret = 0;*/
 
-    KYAA_LOOP {
-        KYAA_BEGIN
+    /*KYAA_LOOP {*/
+        /*KYAA_BEGIN*/
 
-        KYAA_FLAG_LONG('a', "autism",
-"        sensitivity to outliers\n"
-"        range: [0,256];     default: 32")
-            parameters.autism = (double)(kyaa_long_value) / 256.;
+        /*KYAA_FLAG_LONG('a', "autism",*/
+/*"        sensitivity to outliers\n"*/
+/*"        range: [0,256];     default: 32")*/
+            /*parameters.autism = (double)(kyaa_long_value) / 256.;*/
 
-        KYAA_FLAG_LONG('N', "neighbors",
-"        points to use when sampling\n"
-"        range: [0,1024];    default: 29")
-            parameters.neighbors = kyaa_long_value;
+        /*KYAA_FLAG_LONG('N', "neighbors",*/
+/*"        points to use when sampling\n"*/
+/*"        range: [0,1024];    default: 29")*/
+            /*parameters.neighbors = kyaa_long_value;*/
 
-        KYAA_FLAG_LONG('R', "circle-radius",
-"        circle neighborhood radius\n"
-"        range: [1,128];     default: [n/a]")
-            int radius = kyaa_long_value;
-            radius = CLAMP(radius, 1, (int)(LEN(disc00)));
-            parameters.neighbors = disc00[radius - 1];
+        /*KYAA_FLAG_LONG('R', "circle-radius",*/
+/*"        circle neighborhood radius\n"*/
+/*"        range: [1,128];     default: [n/a]")*/
+            /*int radius = kyaa_long_value;*/
+            /*radius = CLAMP(radius, 1, (int)(LEN(disc00)));*/
+            /*parameters.neighbors = disc00[radius - 1];*/
 
-        KYAA_FLAG_LONG('M', "tries",
-"        random points added to candidates\n"
-"        range: [0,65536];   default: 192")
-            parameters.tries = kyaa_long_value;
+        /*KYAA_FLAG_LONG('M', "tries",*/
+/*"        random points added to candidates\n"*/
+/*"        range: [0,65536];   default: 192")*/
+            /*parameters.tries = kyaa_long_value;*/
 
-        KYAA_FLAG_LONG('m', "magic",
-"        magic constant, affects iterations\n"
-"        range: [0,255];     default: 192")
-            parameters.magic = kyaa_long_value;
+        /*KYAA_FLAG_LONG('m', "magic",*/
+/*"        magic constant, affects iterations\n"*/
+/*"        range: [0,255];     default: 192")*/
+            /*parameters.magic = kyaa_long_value;*/
 
-        KYAA_FLAG_LONG('s', "scale",
-"        output size multiplier; negative values set width and height\n"
-"        range: [-8192,32];  default: 1")
-            scale = kyaa_long_value;
+        /*KYAA_FLAG_LONG('s', "scale",*/
+/*"        output size multiplier; negative values set width and height\n"*/
+/*"        range: [-8192,32];  default: 1")*/
+            /*scale = kyaa_long_value;*/
 
-        KYAA_FLAG_LONG('S', "seed",
-"        initial RNG value\n"
-"                            default: 0 [time(0)]")
-            seed = (unsigned long) kyaa_long_value;
+        /*KYAA_FLAG_LONG('S', "seed",*/
+/*"        initial RNG value\n"*/
+/*"                            default: 0 [time(0)]")*/
+            /*seed = (unsigned long) kyaa_long_value;*/
 
-        KYAA_HELP("  {files...}\n"
-"        image files to open, resynthesize, and save as {filename}.resynth.png\n"
-"        required            default: [none]")
+        /*KYAA_HELP("  {files...}\n"*/
+/*"        image files to open, resynthesize, and save as {filename}.resynth.png\n"*/
+/*"        required            default: [none]")*/
 
-        KYAA_END
+        /*KYAA_END*/
 
-        if (kyaa_read_stdin) {
-            fprintf(stderr, "fatal error: reading from stdin is unsupported\n");
-            exit(1);
-        }
+        /*if (kyaa_read_stdin) {*/
+            /*fprintf(stderr, "fatal error: reading from stdin is unsupported\n");*/
+            /*exit(1);*/
+        /*}*/
 
-        CLAMPV(parameters.magic, 0, 255);
-        CLAMPV(parameters.autism, 0., 1.);
-        CLAMPV(parameters.neighbors, 0, disc00[LEN(disc00) - 1]);
-        CLAMPV(parameters.tries, 0, 65536);
-        CLAMPV(scale, -8192, 32);
+        /*CLAMPV(parameters.magic, 0, 255);*/
+        /*CLAMPV(parameters.autism, 0., 1.);*/
+        /*CLAMPV(parameters.neighbors, 0, disc00[LEN(disc00) - 1]);*/
+        /*CLAMPV(parameters.tries, 0, 65536);*/
+        /*CLAMPV(scale, -8192, 32);*/
 
-        char *fn = kyaa_arg;
+        /*char *fn = kyaa_arg;*/
 
-        int w, h, d;
-        uint8_t *image = stbi_load(fn, &w, &h, &d, 0);
-        if (image == NULL) {
-            fprintf(stderr, "invalid image: %s\n", fn);
-            ret--;
-            continue;
-        }
+        /*int w, h, d;*/
+        /*uint8_t *image = stbi_load(fn, &w, &h, &d, 0);*/
+        /*if (image == NULL) {*/
+            /*fprintf(stderr, "invalid image: %s\n", fn);*/
+            /*ret--;*/
+            /*continue;*/
+        /*}*/
 
-        IMAGE_RESIZE(s->corpus, w, h, d);
-        memcpy(s->corpus_array, image, w * h * d);
+        /*IMAGE_RESIZE(s->corpus, w, h, d);*/
+        /*memcpy(s->corpus_array, image, w * h * d);*/
 
-        s->input_bytes = MIN(d, 3);
+        /*s->input_bytes = MIN(d, 3);*/
 
-        {
-            int data_w = 256, data_h = 256;
-            if (scale > 0) data_w = scale * w, data_h = scale * h;
-            if (scale < 0) data_w = -scale, data_h = -scale;
-            IMAGE_RESIZE(s->data, data_w, data_h, s->input_bytes);
-        }
+        /*{*/
+            /*int data_w = 256, data_h = 256;*/
+            /*if (scale > 0) data_w = scale * w, data_h = scale * h;*/
+            /*if (scale < 0) data_w = -scale, data_h = -scale;*/
+            /*IMAGE_RESIZE(s->data, data_w, data_h, s->input_bytes);*/
+        /*}*/
 
-        stbi_image_free(image);
+        /*stbi_image_free(image);*/
 
-        if (seed) rnd_pcg_seed(&pcg, seed);
-        else rnd_pcg_seed(&pcg, time(0));
-        resynth(s, parameters);
+        /*if (seed) rnd_pcg_seed(&pcg, seed);*/
+        /*else rnd_pcg_seed(&pcg, time(0));*/
+        /*resynth(s, parameters);*/
 
-        char *out_fn = manipulate_filename(fn, ".resynth.png");
-        puts(out_fn);
-        int result = stbi_write_png(out_fn, s->data.width, s->data.height,
-                                    s->data.depth, s->data_array, 0);
-        if (!result) {
-            fprintf(stderr, "failed to write: %s\n", out_fn);
-            ret--;
-        }
+        /*char *out_fn = manipulate_filename(fn, ".resynth.png");*/
+        /*puts(out_fn);*/
+        /*int result = stbi_write_png(out_fn, s->data.width, s->data.height,*/
+                                    /*s->data.depth, s->data_array, 0);*/
+        /*if (!result) {*/
+            /*fprintf(stderr, "failed to write: %s\n", out_fn);*/
+            /*ret--;*/
+        /*}*/
 
-        free(out_fn);
-    }
+        /*free(out_fn);*/
+    /*}*/
 
-    state_free(s);
+    /*state_free(s);*/
 
-    return ret;
-}
+    /*return ret;*/
+/*}*/
