@@ -523,6 +523,7 @@ resynth_parameters_random_seed(resynth_parameters_t parameters, unsigned long se
 
 void
 resynth_destroy(void* resynth_object) {
+    // fixme: Resynth_state cannot be trivially freed like this
     free(resynth_object);
 }
 
