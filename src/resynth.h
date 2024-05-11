@@ -65,8 +65,6 @@ resynth_parameters_magic(resynth_parameters_t parameters, int magic);
 void
 resynth_parameters_random_seed(resynth_parameters_t parameters, unsigned long seed);
 
-void
-resynth_destroy(void* resynth_object);
 
 /* Processing and Results */ 
 resynth_result_t 
@@ -86,6 +84,17 @@ resynth_result_height(resynth_result_t result);
 
 size_t
 resynth_result_channels(resynth_result_t result);
+
+/* Memory Management */ 
+
+void
+resynth_free_state(resynth_state_t state);
+
+void
+resynth_free_parameters(resynth_parameters_t parameters);
+
+void
+resynth_free_result(resynth_result_t result);
 
 #if __cplusplus
 }

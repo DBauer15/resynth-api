@@ -115,9 +115,9 @@ int main(int argc, char** argv) {
         }
 
         free(out_fn);
-        resynth_destroy(result);
-        resynth_destroy(params);
-        resynth_destroy(state);
+        resynth_free_result(result);
+        resynth_free_parameters(params);
+        resynth_free_state(state);
     }
 
     return ret;

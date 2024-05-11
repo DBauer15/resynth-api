@@ -538,12 +538,6 @@ resynth_parameters_random_seed(resynth_parameters_t parameters, unsigned long se
     parameters->random_seed = seed;
 }
 
-void
-resynth_destroy(void* resynth_object) {
-    // fixme: Resynth_state cannot be trivially freed like this
-    free(resynth_object);
-}
-
 /* Processing and Results */ 
 resynth_result_t 
 resynth_run(resynth_state_t state, resynth_parameters_t parameters) {
@@ -588,6 +582,23 @@ resynth_result_channels(resynth_result_t result) {
     return result->channels;
 }
 
+
+/* Memory Management */ 
+void
+resynth_free_state(resynth_state_t state) {
+    state_free(state);
+    free(state);
+}
+
+void
+resynth_free_parameters(resynth_parameters_t parameters) {
+    free(parameters);
+}
+
+void
+resynth_free_result(resynth_result_t result) {
+    free(result);
+}
 
 /*int main(int argc, char *argv[]) {*/
     /*Resynth_state state = {0};*/
