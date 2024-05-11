@@ -140,6 +140,7 @@ struct _Parameters {
     double autism;
     int neighbors, tries;
     int magic;
+    int random_seed;
 };
 
 INLINE bool wrap_or_clip(const Parameters parameters, const Image image,
@@ -462,7 +463,6 @@ resynth_load_image(const char* filename) {
     }
 
     stbi_image_free(image);
-    rnd_pcg_seed(&pcg, time(0));
     return s;
 }
 
@@ -482,6 +482,7 @@ resynth_parameters_create() {
     parameters->autism = 32. / 256.; // 30. / 256.
     parameters->neighbors = 29;      // 30
     parameters->tries = 192;         // 200 (or 80 in the paper)
+    parameters->random_seed = time(0);
     return parameters;
 }
 
@@ -516,6 +517,11 @@ resynth_parameters_magic(resynth_parameters_t parameters, int magic) {
 }
 
 void
+resynth_parameters_random_seed(resynth_parameters_t parameters, unsigned long seed) {
+    parameters->random_seed = seed;
+}
+
+void
 resynth_destroy(void* resynth_object) {
     free(resynth_object);
 }
@@ -525,6 +531,8 @@ resynth_result_t
 resynth_run(resynth_state_t state, resynth_parameters_t parameters) {
     assert(state != NULL);
     assert(parameters != NULL);
+
+    rnd_pcg_seed(&pcg, parameters->random_seed);
 
     resynth_result_t result = calloc(1, sizeof(Resynth_result));
     resynth(state, *parameters);

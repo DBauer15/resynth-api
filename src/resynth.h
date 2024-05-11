@@ -63,6 +63,9 @@ void
 resynth_parameters_magic(resynth_parameters_t parameters, int magic);
 
 void
+resynth_parameters_random_seed(resynth_parameters_t parameters, unsigned long seed);
+
+void
 resynth_destroy(void* resynth_object);
 
 /* Processing and Results */ 
