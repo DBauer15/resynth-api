@@ -440,10 +440,9 @@ static const int disc00[] = {
 // API Functions
 /* Image and Buffer Loading */
 resynth_state_t
-resynth_load_image(const char* filename) {
+resynth_state_create_from_image(const char* filename, int scale) {
     resynth_state_t s = calloc(1, sizeof(Resynth_state));
     int w, h, d;
-    int scale = 1;
     uint8_t *image = stbi_load(filename, &w, &h, &d, 0);
     if (image == NULL) {
         fprintf(stderr, "invalid image: %s\n", filename);
@@ -467,9 +466,27 @@ resynth_load_image(const char* filename) {
 }
 
 resynth_state_t
-resynth_load_memory(uint8_t* pixels, size_t width, size_t height, size_t channels) {
-    // TODO
-    return NULL;
+resynth_state_create_from_memory(uint8_t* pixels, size_t width, size_t height, size_t channels, int scale) {
+    assert(pixels != NULL);
+    assert(width > 0);
+    assert(height > 0);
+    assert(channels >= 3);
+
+    resynth_state_t s = calloc(1, sizeof(Resynth_state));
+
+    IMAGE_RESIZE(s->corpus, width, height, channels);
+    memcpy(s->corpus_array, pixels, width * height * channels);
+
+    s->input_bytes = MIN(channels, 3);
+    
+    {
+        int data_w = 256, data_h = 256;
+        if (scale > 0) data_w = scale * width, data_h = scale * height;
+        if (scale < 0) data_w = -scale, data_h = -scale;
+        IMAGE_RESIZE(s->data, data_w, data_h, s->input_bytes);
+    }
+
+    return s;
 }
 
 /* Config */

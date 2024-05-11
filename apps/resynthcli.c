@@ -91,7 +91,7 @@ int main(int argc, char** argv) {
 
         const char *fn = kyaa_arg;
 
-        resynth_state_t state = resynth_load_image(fn);
+        resynth_state_t state = resynth_state_create_from_image(fn, 1);
         resynth_parameters_t params = resynth_parameters_create();
         resynth_parameters_outlier_sensitivity(params, autism);
         resynth_parameters_neighbors(params, neighbors);
