@@ -48,7 +48,7 @@ void
 resynth_parameters_h_tile(resynth_parameters_t parameters, bool h_tile);
 
 void
-resynth_parameters_h_tile(resynth_parameters_t parameters, bool h_tile);
+resynth_parameters_v_tile(resynth_parameters_t parameters, bool v_tile);
 
 void
 resynth_parameters_outlier_sensitivity(resynth_parameters_t parameters, double sensitivity);
