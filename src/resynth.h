@@ -40,6 +40,9 @@ resynth_state_create_from_image(const char* filename, int scale);
 resynth_state_t
 resynth_state_create_from_memory(uint8_t* pixels, size_t width, size_t height, size_t channels, int scale);
 
+resynth_state_t
+resynth_state_create_from_memoryf(float* pixels, size_t width, size_t height, size_t channels, int scale);
+
 /* Config */
 resynth_parameters_t
 resynth_parameters_create();
@@ -76,6 +79,9 @@ resynth_result_valid(resynth_result_t result);
 uint8_t* 
 resynth_result_pixels(resynth_result_t result);
 
+float* 
+resynth_result_pixelsf(resynth_result_t result);
+
 size_t
 resynth_result_width(resynth_result_t result);
 
@@ -86,7 +92,6 @@ size_t
 resynth_result_channels(resynth_result_t result);
 
 /* Memory Management */ 
-
 void
 resynth_free_state(resynth_state_t state);
 

@@ -82,6 +82,7 @@ rnd_pcg_t pcg;
 // end of generic boilerplate, here's the actual program:
 struct _Resynth_result {
     uint8_t* pixels;
+    float* pixelsf;
     size_t width, height, channels;
     bool valid;
 };
@@ -489,6 +490,16 @@ resynth_state_create_from_memory(uint8_t* pixels, size_t width, size_t height, s
     return s;
 }
 
+resynth_state_t
+resynth_state_create_from_memoryf(float* pixels, size_t width, size_t height, size_t channels, int scale) {
+    size_t size = width * height * channels;
+    float pixels_u8[size];
+    for (size_t i = 0; i < size; ++i) {
+        pixels_u8[i] = (uint8_t)CLAMP(pixels[i] * 255, 0, 255);
+    }
+    return resynth_state_create_from_memory(pixels_u8, width, height, channels, scale);
+}
+
 /* Config */
 resynth_parameters_t
 resynth_parameters_create() {
@@ -567,6 +578,21 @@ resynth_result_pixels(resynth_result_t result) {
     return result->pixels;
 }
 
+float* 
+resynth_result_pixelsf(resynth_result_t result) {
+    if (result->pixelsf != NULL)
+        return result->pixelsf;
+    size_t size = result->width * result->height * result->channels;
+    float* pixels_f32 = calloc(size, sizeof(float));
+
+    for (size_t i = 0; i < size; ++i) {
+        pixels_f32[i] = (float)(result->pixels[i] / 255.f);
+    }
+    result->pixelsf = pixels_f32;
+
+    return result->pixelsf;
+}
+
 size_t
 resynth_result_width(resynth_result_t result) {
     return result->width;
@@ -597,6 +623,8 @@ resynth_free_parameters(resynth_parameters_t parameters) {
 
 void
 resynth_free_result(resynth_result_t result) {
+    if (result->pixelsf != NULL)
+        free(result->pixelsf);
     free(result);
 }
 
