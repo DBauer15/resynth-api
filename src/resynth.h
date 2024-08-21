@@ -33,6 +33,11 @@ typedef Resynth_result* resynth_result_t;
 typedef Resynth_state* resynth_state_t;
 typedef Parameters* resynth_parameters_t;
 
+typedef enum {
+    RESYNTH_OPERATION_TEXTURE,
+    RESYNTH_OPERATION_HEAL
+} resynth_operation_t;
+
 /* Image and Buffer Loading */
 resynth_state_t
 resynth_state_create_from_image(const char* filename, int scale);
@@ -46,6 +51,12 @@ resynth_state_create_from_memoryf(float* pixels, size_t width, size_t height, si
 /* Config */
 resynth_parameters_t
 resynth_parameters_create();
+
+void
+resynth_parameters_operation(resynth_parameters_t parameters, resynth_operation_t operation);
+
+void
+resynth_parameters_mask(resynth_parameters_t parameters, uint8_t* pixels, size_t width, size_t height);
 
 void
 resynth_parameters_h_tile(resynth_parameters_t parameters, bool h_tile);
