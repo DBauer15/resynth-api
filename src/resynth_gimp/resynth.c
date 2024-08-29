@@ -104,12 +104,44 @@ resynth_state_create_from_image(const char* filename, int scale) {
 
 resynth_state_t
 resynth_state_create_from_memory(uint8_t* pixels, size_t width, size_t height, size_t channels, int scale) {
-    return NULL;
+    assert(pixels != NULL);
+    assert(width > 0);
+    assert(height > 0);
+    assert(channels >= 3);
+    assert(channels <= 4);
+
+    resynth_state_t state = calloc(1, sizeof(Resynth_state));
+
+    ImageBuffer* imageBuffer = calloc(1, sizeof(ImageBuffer));
+    imageBuffer->data = calloc(width * height * channels, sizeof(uint8_t));
+    memcpy(imageBuffer->data, pixels, width * height * channels * sizeof(uint8_t));
+    imageBuffer->width = width;
+    imageBuffer->height = height;
+    imageBuffer->rowBytes = width * channels * sizeof(uint8_t);
+
+    state->imageBuffer = imageBuffer;
+    if (channels == 4) {
+        state->imageFormat = T_RGBA;
+    } else {
+        state->imageFormat = T_RGB;
+    }
+
+    return state;
 }
 
 resynth_state_t
 resynth_state_create_from_memoryf(float* pixels, size_t width, size_t height, size_t channels, int scale) {
-    return NULL;
+    size_t size = width * height * channels;
+    uint8_t* pixels_u8 = calloc(size, sizeof(uint8_t));
+
+    for (size_t i = 0; i < size; ++i) {
+        pixels_u8[i] = (uint8_t)min(255, max(0, (pixels[i] * 255)));
+    }
+
+    resynth_state_t state = resynth_state_create_from_memory(pixels_u8, width, height, channels, scale);
+
+    free(pixels_u8);
+    return state;
 }
 
 /* Config */
