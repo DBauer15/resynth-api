@@ -1,6 +1,7 @@
 #include "../resynth.h"
 #include "imageSynth.h"
 #include <string.h>
+#include <stdlib.h>
 
 // decide which features we want from stb_image.
 // this should cover the most common formats.
