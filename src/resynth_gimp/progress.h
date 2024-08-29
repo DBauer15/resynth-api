@@ -3,7 +3,7 @@
 Types for GUI progress callbacks.
 */
 
-#ifndef SYNTH_USE_GLIB_THREADS
+#if !defined(SYNTH_USE_GLIB_THREADS) && defined(SYNTH_THREADED)
 	  #include <pthread.h>
 #endif
 #include "passes.h"
@@ -42,11 +42,14 @@ void initializeThreadedProgressRecord(
      ProgressRecordT* progressRecord,
      TRepetionParameters repetitionParams,
      void (*progressCallback)(int, void*),
-     void * contextInfo,
+     void * contextInfo
+#ifdef SYNTH_THREADED 
+     ,
 #ifdef SYNTH_USE_GLIB_THREADS
      GMutex *mutexProgress;
 #else
      pthread_mutex_t *mutexProgress;
+#endif
 #endif
 );
      

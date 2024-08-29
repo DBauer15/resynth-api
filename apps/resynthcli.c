@@ -13,10 +13,14 @@
 // we only use png (stbi_write_png) in this case.
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_STATIC
+#if ( __GNUC__ * 100 + __GNUC_MINOR__ ) >= 406
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-prototypes"
+#endif
 #include "stb_image_write.h"
+#if ( __GNUC__ * 100 + __GNUC_MINOR__ ) >= 406
 #pragma GCC diagnostic pop
+#endif
 
 static char *manipulate_filename(const char *fn,
                                  const char *new_extension) {

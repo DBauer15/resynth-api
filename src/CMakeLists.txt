@@ -27,7 +27,9 @@ set_target_properties(resynth PROPERTIES
     C_STANDARD_REQUIRED ON
 )
 
+if (NOT WIN32)
 target_link_libraries(resynth m)
+endif ()
 
 target_include_directories(resynth PUBLIC
       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>

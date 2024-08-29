@@ -33,7 +33,7 @@ struct _Resynth_result {
 };
 
 /* Helper functions */
-static void _resynth_progress_callback(int progress, void*) {
+static void _resynth_progress_callback(int progress, void* userdataptr) {
     printf("%d\n", progress);
 }
 
