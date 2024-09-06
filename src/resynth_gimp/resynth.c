@@ -136,7 +136,7 @@ resynth_state_create_from_memoryf(float* pixels, size_t width, size_t height, si
     uint8_t* pixels_u8 = calloc(size, sizeof(uint8_t));
 
     for (size_t i = 0; i < size; ++i) {
-        pixels_u8[i] = (uint8_t)min(255, max(0, (pixels[i] * 255)));
+        pixels_u8[i] = (uint8_t)fmin(255, fmax(0, (pixels[i] * 255)));
     }
 
     resynth_state_t state = resynth_state_create_from_memory(pixels_u8, width, height, channels, scale);
