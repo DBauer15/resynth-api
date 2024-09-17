@@ -299,7 +299,7 @@ resynth_result_pixelsf(resynth_result_t result) {
         result->imageBufferf->rowBytes = result->imageBufferf->width * pixelel_size;
         result->imageBufferf->data = calloc(result->imageBufferf->width * result->imageBufferf->height, pixelel_size);
         for (int i = 0; i < result->imageBuffer->height * result->imageBuffer->width * pixelel_count; ++i) {
-            result->imageBufferf->data[i] = (float)result->imageBuffer->data[i] / 255.f;
+            ((float*)result->imageBufferf->data)[i] = ((float)result->imageBuffer->data[i]) / 255;
         }
     }
 
