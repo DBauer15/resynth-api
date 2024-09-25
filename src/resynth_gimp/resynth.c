@@ -65,15 +65,15 @@ _resynth_create_default_masks(resynth_parameters_t parameters, resynth_state_t s
 
 /* Image and Buffer Loading */
 resynth_state_t
-resynth_state_create_from_image(const char* filename, int scale) {
+resynth_state_create_from_image(const char* filename, int desired_channels, int scale) {
     resynth_state_t state = calloc(1, sizeof(Resynth_state));
     int w, h, d;
-    uint8_t *image = stbi_load(filename, &w, &h, &d, 0);
+    uint8_t *image = stbi_load(filename, &w, &h, &d, desired_channels);
     if (image == NULL) {
         fprintf(stderr, "invalid image: %s\n", filename);
         return NULL;
     }
-    if (d < 3 || d > 4) {
+    if (desired_channels < 3 || desired_channels > 4) {
         fprintf(stderr, "invalid channel count: %d\n", d); 
         stbi_image_free(image);
         return NULL;

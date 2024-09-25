@@ -40,7 +40,7 @@ typedef enum {
 
 /* Image and Buffer Loading */
 resynth_state_t
-resynth_state_create_from_image(const char* filename, int scale);
+resynth_state_create_from_image(const char* filename, int desired_channels, int scale);
 
 resynth_state_t
 resynth_state_create_from_memory(uint8_t* pixels, size_t width, size_t height, size_t channels, int scale);
