@@ -38,6 +38,11 @@ typedef enum {
     RESYNTH_OPERATION_HEAL
 } resynth_operation_t;
 
+typedef enum {
+    RESYNTH_MASK_SOURCE,
+    RESYNTH_MASK_TARGET
+} resynth_mask_type_t;
+
 /* Image and Buffer Loading */
 resynth_state_t
 resynth_state_create_from_image(const char* filename, int scale);
@@ -56,7 +61,7 @@ void
 resynth_parameters_operation(resynth_parameters_t parameters, resynth_operation_t operation);
 
 void
-resynth_parameters_mask(resynth_parameters_t parameters, uint8_t* pixels, size_t width, size_t height);
+resynth_parameters_mask(resynth_parameters_t parameters, uint8_t* pixels, size_t width, size_t height, resynth_mask_type_t type);
 
 void
 resynth_parameters_h_tile(resynth_parameters_t parameters, bool h_tile);

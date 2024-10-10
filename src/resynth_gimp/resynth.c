@@ -169,26 +169,31 @@ resynth_parameters_operation(resynth_parameters_t parameters, resynth_operation_
 }
 
 void
-resynth_parameters_mask(resynth_parameters_t parameters, uint8_t* pixels, size_t width, size_t height) {
-    free(parameters->mask);
-    free(parameters->mask2);
+resynth_parameters_mask(resynth_parameters_t parameters, uint8_t* pixels, size_t width, size_t height, resynth_mask_type_t type) {
 
-    parameters->mask = calloc(1, sizeof(ImageBuffer));
-    parameters->mask->width = width;
-    parameters->mask->height = height;
-    parameters->mask->rowBytes = width * sizeof(uint8_t);
-    parameters->mask->data = calloc(1, width * height * sizeof(uint8_t));
-    memcpy(parameters->mask->data, pixels, width * height * sizeof(uint8_t));
-
-    parameters->mask2 = calloc(1, sizeof(ImageBuffer));
-    parameters->mask2->width = width;
-    parameters->mask2->height = height;
-    parameters->mask2->rowBytes = width * sizeof(uint8_t);
-    parameters->mask2->data = calloc(1, width * height * sizeof(uint8_t));
-
-    for (int i = 0; i < width*height; ++i) {
-        parameters->mask2->data[i] = parameters->mask->data[i] ? 0x00 : 0XFF;
+    if (type == RESYNTH_MASK_TARGET) {
+        free(parameters->mask);
+        parameters->mask = calloc(1, sizeof(ImageBuffer));
+        parameters->mask->width = width;
+        parameters->mask->height = height;
+        parameters->mask->rowBytes = width * sizeof(uint8_t);
+        parameters->mask->data = calloc(1, width * height * sizeof(uint8_t));
+        memcpy(parameters->mask->data, pixels, width * height * sizeof(uint8_t));
     }
+    
+    if (type == RESYNTH_MASK_SOURCE) {
+        free(parameters->mask2);
+        parameters->mask2 = calloc(1, sizeof(ImageBuffer));
+        parameters->mask2->width = width;
+        parameters->mask2->height = height;
+        parameters->mask2->rowBytes = width * sizeof(uint8_t);
+        parameters->mask2->data = calloc(1, width * height * sizeof(uint8_t));
+        memcpy(parameters->mask2->data, pixels, width * height * sizeof(uint8_t));
+    }
+
+    /*for (int i = 0; i < width*height; ++i) {*/
+        /*parameters->mask2->data[i] = parameters->mask->data[i] ? 0x00 : 0XFF;*/
+    /*}*/
 }
 
 void
@@ -241,11 +246,14 @@ resynth_run(resynth_state_t state, resynth_parameters_t parameters) {
     if (parameters->op == RESYNTH_OPERATION_HEAL) {
         printf("Running healing op\n");
         int cancel_flag = 0;
-        imageSynth(state->imageBuffer,
+        TImageSynthError result = imageSynth(state->imageBuffer,
                 parameters->mask,
                 state->imageFormat,
                 parameters->parameters,
                 &_resynth_progress_callback, NULL, &cancel_flag);
+        if (result != IMAGE_SYNTH_SUCCESS) {
+            printf("Error running healing op: err(%d)\n", result);
+        }
     }
 
     // "Full API" does everything else
