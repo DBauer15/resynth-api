@@ -5,20 +5,19 @@
 // API Functions
 /* Image and Buffer Loading */
 resynth_state_t
-resynth_state_create_from_image(const char* filename, int scale) {
+resynth_state_create_from_image(const char* filename, int desired_channels, int scale) {
     resynth_state_t s = calloc(1, sizeof(Resynth_state));
     int w, h, d;
-    uint8_t *image = stbi_load(filename, &w, &h, &d, 0);
+    uint8_t *image = stbi_load(filename, &w, &h, &d, desired_channels);
     if (image == NULL) {
         fprintf(stderr, "invalid image: %s\n", filename);
         return NULL;
     }
 
-    IMAGE_RESIZE(s->corpus, w, h, d);
-    memcpy(s->corpus_array, image, w * h * d);
+    IMAGE_RESIZE(s->corpus, w, h, desired_channels);
+    memcpy(s->corpus_array, image, w * h * desired_channels);
 
-    s->input_bytes = MIN(d, 3);
-
+    s->input_bytes = desired_channels;
     {
         int data_w = 256, data_h = 256;
         if (scale > 0) data_w = scale * w, data_h = scale * h;
@@ -42,8 +41,7 @@ resynth_state_create_from_memory(uint8_t* pixels, size_t width, size_t height, s
     IMAGE_RESIZE(s->corpus, width, height, channels);
     memcpy(s->corpus_array, pixels, width * height * channels);
 
-    s->input_bytes = MIN(channels, 3);
-    
+    s->input_bytes = channels;
     {
         int data_w = 256, data_h = 256;
         if (scale > 0) data_w = scale * width, data_h = scale * height;
@@ -57,19 +55,23 @@ resynth_state_create_from_memory(uint8_t* pixels, size_t width, size_t height, s
 resynth_state_t
 resynth_state_create_from_memoryf(float* pixels, size_t width, size_t height, size_t channels, int scale) {
     size_t size = width * height * channels;
-    float pixels_u8[size];
+    uint8_t* pixels_u8 = calloc(size, sizeof(uint8_t));
     for (size_t i = 0; i < size; ++i) {
-        pixels_u8[i] = (uint8_t)CLAMP(pixels[i] * 255, 0, 255);
+        /*pixels_u8[i] = (uint8_t)CLAMP(pixels[i] * 255, 0, 255);*/
+        pixels_u8[i] = (uint8_t)fmin(255, fmax(0, (pixels[i] * 255)));
     }
-    return resynth_state_create_from_memory(pixels_u8, width, height, channels, scale);
+    resynth_state_t state =  resynth_state_create_from_memory(pixels_u8, width, height, channels, scale);
+
+    free(pixels_u8);
+    return state;
 }
 
 /* Config */
 resynth_parameters_t
 resynth_parameters_create() {
     resynth_parameters_t parameters = calloc(1, sizeof(Parameters));
-    parameters->v_tile = true;
-    parameters->h_tile = true;
+    parameters->v_tile = false;
+    parameters->h_tile = false;
     parameters->magic = 192;         // 192 (3/4)
     parameters->autism = 32. / 256.; // 30. / 256.
     parameters->neighbors = 29;      // 30
@@ -162,7 +164,7 @@ resynth_result_pixelsf(resynth_result_t result) {
     float* pixels_f32 = calloc(size, sizeof(float));
 
     for (size_t i = 0; i < size; ++i) {
-        pixels_f32[i] = (float)(result->pixels[i] / 255.f);
+        pixels_f32[i] = ((float)(result->pixels[i]) / 255.f);
     }
     result->pixelsf = pixels_f32;
 
